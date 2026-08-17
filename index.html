@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFS Learn · Request Initiation</title>
+  <meta name="description" content="Interactive gamified POC to learn the IFS Cloud 'Create New Request' process." />
+  <style>
+:root {
+  --ifs-bg:#0a0a12; --ifs-bg2:#10101c; --ifs-panel:#16162a; --ifs-panel2:#1e1e38;
+  --ifs-line:#2b2b4d; --ifs-text:#f3f1fb; --ifs-muted:#a7a3c4;
+  --ifs-accent:#7c3aed; --ifs-accent2:#a855f7; --ifs-warm:#ff5a7a;
+  --ifs-gold:#ffcf4d; --ifs-green:#34d399; --ifs-red:#ff5a6a;
+  --shadow:0 14px 40px rgba(0,0,0,.55); --radius:16px; font-synthesis:none;
+}
+* { box-sizing:border-box; }
+html, body {
+  margin:0; height:100%;
+  background:
+    radial-gradient(1100px 600px at 78% -12%, #241a4d 0%, transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, #2a1246 0%, transparent 55%),
+    var(--ifs-bg);
+  color:var(--ifs-text);
+  font-family:"Segoe UI", Inter, system-ui, -apple-system, Roboto, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.app { max-width:1000px; margin:0 auto; padding:18px 18px 48px; }
+.topbar { display:flex; align-items:center; gap:14px; padding:12px 16px;
+  background:linear-gradient(90deg,#12122a,#1a1436); border:1px solid var(--ifs-line);
+  border-radius:var(--radius); box-shadow:var(--shadow); }
+.brand { display:flex; align-items:center; gap:12px; }
+.brand svg { display:block; }
+.brand .t-title { font-size:15px; font-weight:700; }
+.brand .t-sub { font-size:12px; color:var(--ifs-muted); }
+.spacer { flex:1; }
+.mute-btn { cursor:pointer; border:1px solid var(--ifs-line); background:var(--ifs-panel2);
+  color:var(--ifs-text); width:40px; height:40px; border-radius:10px; font-size:18px; transition:.15s; }
+.mute-btn:hover { border-color:var(--ifs-accent); }
+.scorebox { text-align:right; font-variant-numeric:tabular-nums; min-width:74px; }
+.scorebox .score { font-size:24px; font-weight:800; color:var(--ifs-accent2); transition:transform .15s; }
+.scorebox .score.bump { transform:scale(1.35); }
+.scorebox .label { font-size:11px; color:var(--ifs-muted); letter-spacing:1px; }
+.progress-wrap { margin:16px 2px 6px; }
+.progress-track { height:9px; background:var(--ifs-panel); border-radius:999px; overflow:hidden; border:1px solid var(--ifs-line); }
+.progress-fill { height:100%; width:0%;
+  background:linear-gradient(90deg,var(--ifs-accent),var(--ifs-accent2));
+  box-shadow:0 0 14px rgba(168,85,247,.6); transition:width .5s ease; }
+.trophy-rail { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.trophy-chip { font-size:12px; padding:5px 10px; border-radius:999px;
+  background:var(--ifs-panel); border:1px solid var(--ifs-line); color:var(--ifs-muted); transition:.3s; }
+.trophy-chip.earned { background:rgba(255,207,77,.14); border-color:var(--ifs-gold); color:var(--ifs-gold); animation:chipPop .45s ease; }
+@keyframes chipPop { 0%{transform:scale(.6);} 60%{transform:scale(1.18);} 100%{transform:scale(1);} }
+.map-card { margin-top:14px; border:1px solid var(--ifs-line); border-radius:var(--radius);
+  overflow:hidden; background:#05060c; box-shadow:var(--shadow); position:relative; }
+#road { display:block; width:100%; height:auto; }
+.speed-badge { position:absolute; left:14px; bottom:12px; font-size:12px; letter-spacing:1px;
+  color:#cbd3ff; background:rgba(10,10,25,.55); padding:5px 10px; border-radius:8px;
+  border:1px solid var(--ifs-line); font-variant-numeric:tabular-nums; backdrop-filter:blur(3px); }
+.panel { margin-top:14px; background:var(--ifs-panel); border:1px solid var(--ifs-line);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); animation:rise .35s ease; }
+@keyframes rise { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+.panel h2 { margin:0 0 4px; font-size:20px; }
+.stage-tag { color:var(--ifs-accent2); font-size:12px; letter-spacing:1px; font-weight:700; }
+.teach { color:var(--ifs-text); line-height:1.55; margin:12px 0 18px; font-size:15px; }
+.teach b { color:var(--ifs-accent2); }
+.prompt { font-size:15px; margin:4px 0 14px; color:var(--ifs-text); }
+.prompt b { color:#fff; }
+.btn { cursor:pointer; border:none; border-radius:10px; padding:12px 18px; font-size:14px; font-weight:700;
+  color:#fff; background:linear-gradient(90deg,var(--ifs-accent),var(--ifs-accent2));
+  transition:transform .08s ease, filter .2s; box-shadow:0 6px 18px rgba(124,58,237,.35); }
+.btn:hover { filter:brightness(1.1); }
+.btn:active { transform:translateY(1px); }
+.btn.ghost { background:transparent; color:var(--ifs-text); border:1px solid var(--ifs-line); box-shadow:none; }
+.btn:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+.options { display:flex; flex-wrap:wrap; gap:10px; }
+.opt { cursor:pointer; padding:12px 16px; border-radius:10px; background:var(--ifs-panel2);
+  border:1px solid var(--ifs-line); color:var(--ifs-text); font-size:14px; transition:.15s; user-select:none; }
+.opt:hover { border-color:var(--ifs-accent); transform:translateY(-1px); }
+.opt.correct { background:rgba(52,211,153,.16); border-color:var(--ifs-green); color:#d7ffee; animation:chipPop .4s ease; }
+.opt.wrong { background:rgba(255,90,106,.14); border-color:var(--ifs-red); color:#ffdada; animation:shake .35s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+.group-label { font-size:12px; color:var(--ifs-muted); letter-spacing:1px; margin:12px 0 6px; }
+.load-area { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+.load-pool { display:flex; flex-direction:column; gap:10px; min-width:200px; flex:1; }
+.load-stage-right { flex:1.2; min-width:300px; }
+.chip { padding:12px 16px; background:var(--ifs-panel2); border:1px solid var(--ifs-line);
+  border-radius:10px; cursor:grab; font-size:14px; transition:.15s; display:flex; gap:8px; align-items:center; }
+.chip:hover { border-color:var(--ifs-accent); transform:translateY(-1px); }
+.chip.dragging { opacity:.4; }
+.chip.loaded { opacity:.35; pointer-events:none; text-decoration:line-through; }
+.chip.reject { animation:shake .35s ease; border-color:var(--ifs-red); }
+#truckCanvas { display:block; width:100%; height:auto; border-radius:12px;
+  background:linear-gradient(180deg,#0e0e20,#08080f); border:1px solid var(--ifs-line); }
+.fill-meter { margin-top:10px; }
+.fill-track { height:10px; background:var(--ifs-panel); border:1px solid var(--ifs-line); border-radius:999px; overflow:hidden; }
+.fill-bar { height:100%; width:0%; background:linear-gradient(90deg,var(--ifs-green),#7ef7c6); transition:width .4s ease; }
+.fill-label { font-size:12px; color:var(--ifs-muted); margin-top:6px; }
+.order-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+.order-item { padding:12px 16px; background:var(--ifs-panel2); border:1px solid var(--ifs-line);
+  border-radius:10px; cursor:grab; font-size:14px; display:flex; gap:10px; align-items:center; }
+.order-item .handle { color:var(--ifs-muted); }
+.order-item.dragging { opacity:.4; }
+.feedback { margin-top:14px; font-size:14px; min-height:22px; font-weight:600; }
+.feedback.ok { color:var(--ifs-green); }
+.feedback.no { color:var(--ifs-red); }
+.actions { margin-top:18px; display:flex; gap:10px; }
+.quiz-q { font-size:16px; font-weight:700; margin:6px 0 14px; }
+.quiz-progress { font-size:12px; color:var(--ifs-muted); letter-spacing:1px; }
+.result { text-align:center; padding:30px 20px; }
+.result .big-trophy { font-size:88px; animation:pop .6s ease; }
+@keyframes pop { 0%{transform:scale(.2); opacity:0;} 100%{transform:scale(1); opacity:1;} }
+.result h1 { margin:6px 0; font-size:30px; }
+.result .final-score { font-size:20px; color:var(--ifs-accent2); font-weight:800; }
+.result .stars { font-size:34px; color:var(--ifs-gold); letter-spacing:6px; margin:8px 0; }
+.fidelity { margin-top:20px; font-size:12px; color:var(--ifs-muted); line-height:1.5;
+  border-top:1px dashed var(--ifs-line); padding-top:14px; }
+.fidelity a { color:var(--ifs-accent2); }
+.fidelity code { color:#d9d2ff; }
+.confetti { position:fixed; top:-10px; width:9px; height:14px; z-index:50; will-change:transform; }
+.floater { position:fixed; z-index:60; font-weight:800; pointer-events:none; }
+@media (max-width:560px) {
+  .topbar { flex-wrap:wrap; }
+  .panel { padding:16px; }
+  .load-area { flex-direction:column; }
+}
+
+  </style>
+</head>
+<body>
+
+  <main class="app">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="brand">
+        <!-- Recreated IFS-style wordmark. TODO: replace with official IFS logo asset. -->
+        <svg width="66" height="34" viewBox="0 0 66 34" role="img" aria-label="IFS">
+          <rect x="0" y="0" width="66" height="34" rx="7" fill="#7c3aed"/>
+          <rect x="0" y="0" width="66" height="34" rx="7" fill="url(#g)" opacity="0.35"/>
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+          <text x="33" y="24" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+                font-size="19" font-weight="800" letter-spacing="1.5" fill="#ffffff">IFS</text>
+        </svg>
+        <div>
+          <div class="t-title" id="t-title">Request Initiation</div>
+          <div class="t-sub" id="t-sub">Create New Request — Interactive Learning POC</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="mute-btn" id="muteBtn" title="Mute / unmute sounds" aria-label="Mute or unmute sounds">🔊</button>
+      <div class="scorebox">
+        <div class="score" id="score">0</div>
+        <div class="label">POINTS</div>
+      </div>
+    </header>
+
+    <!-- Progress + trophies -->
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="trophy-rail" id="trophyRail"></div>
+    </div>
+
+    <!-- First-person driving view -->
+    <div class="map-card">
+      <canvas id="road" width="960" height="300" aria-label="First-person driving view"></canvas>
+      <div class="speed-badge" id="speedBadge">STOPPED · 0 km/h</div>
+    </div>
+
+    <!-- Active stage / quiz / result panel -->
+    <section class="panel" id="panel" aria-live="polite"></section>
+
+    <!-- Fidelity note -->
+    <div class="fidelity">
+      <b>Fidelity note (POC):</b> The <i>process steps</i> (Create → capture details → link service object →
+      warranty / service commercial rule → save &amp; release → work task) reflect the IFS Cloud
+      <a href="https://docs.ifs.com/ifsclouddocs/26r1/ProcessModels/Process_Model/Requestinitiation.htm" target="_blank" rel="noopener">Request Initiation process model</a>.
+      Sample data (customer names, asset serials, warranty dates) is <b>illustrative</b> and invented for gameplay.
+      The logo &amp; colours are an <b>approximation</b> of the IFS brand — swap the SVG wordmark and the
+      <code>--ifs-*</code> variables in <code>styles.css</code> for official assets. Items marked
+      <code>// TODO: verify</code> in <code>content.js</code> should be confirmed against your documentation.
+    </div>
+
+  </main>
+
+  <!-- sounds + content first, then engine -->
+
+  <script>
+/* sounds.js — tiny Web Audio synth. No audio files, no dependencies. */
+(() => {
+  "use strict";
+  let ctx = null, master = null, muted = false;
+  function ensure() {
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = 0.35; master.connect(ctx.destination);
+  }
+  function tone(freq, start, dur, type = "sine", peak = 0.6, glideTo = null) {
+    if (!ctx) return;
+    const t0 = ctx.currentTime + start;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, t0);
+    if (glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(master); osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  function noise(start, dur, freq = 800, q = 1, peak = 0.4, type = "bandpass") {
+    if (!ctx) return;
+    const t0 = ctx.currentTime + start;
+    const len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const filt = ctx.createBiquadFilter(); filt.type = type; filt.frequency.value = freq; filt.Q.value = q;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(filt).connect(g).connect(master); src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+  const SFX = {
+    get muted() { return muted; },
+    unlock() { ensure(); if (ctx && ctx.state === "suspended") ctx.resume(); },
+    toggleMute() { ensure(); muted = !muted; if (master) master.gain.value = muted ? 0 : 0.35; return muted; },
+    click() { ensure(); if (muted) return; tone(420, 0, 0.06, "square", 0.25); },
+    hover() { ensure(); if (muted) return; tone(680, 0, 0.03, "sine", 0.08); },
+    correct() { ensure(); if (muted) return;
+      tone(523.25, 0, 0.12, "triangle", 0.5); tone(659.25, 0.10, 0.12, "triangle", 0.5); tone(783.99, 0.20, 0.22, "triangle", 0.55); },
+    wrong() { ensure(); if (muted) return; tone(200, 0, 0.22, "sawtooth", 0.35, 90); noise(0, 0.18, 300, 0.7, 0.15, "lowpass"); },
+    load() { ensure(); if (muted) return; noise(0, 0.16, 1200, 0.8, 0.25, "bandpass"); tone(140, 0.14, 0.10, "sine", 0.5); },
+    trophy() { ensure(); if (muted) return; [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, i * 0.09, 0.18, "triangle", 0.5)); },
+    complete() { ensure(); if (muted) return;
+      [[523.25,0],[523.25,0.12],[523.25,0.24],[659.25,0.36],[783.99,0.54],[1046.5,0.72]].forEach(([f,t]) => tone(f,t,0.24,"triangle",0.5));
+      noise(0.72, 0.5, 2500, 0.5, 0.12, "highpass"); },
+    engineIdle() {
+      ensure(); if (!ctx || muted) return () => {};
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator(), sub = ctx.createOscillator(), g = ctx.createGain();
+      const lfo = ctx.createOscillator(), lfoG = ctx.createGain();
+      osc.type = "sawtooth"; sub.type = "square";
+      osc.frequency.setValueAtTime(58, t0); sub.frequency.setValueAtTime(38, t0);
+      lfo.type = "sine"; lfo.frequency.setValueAtTime(9, t0); // idle chug rate
+      lfoG.gain.setValueAtTime(0.05, t0);
+      lfo.connect(lfoG).connect(g.gain);
+      g.gain.setValueAtTime(0.09, t0);
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 260;
+      osc.connect(g); sub.connect(g); g.connect(lp).connect(master);
+      osc.start(t0); sub.start(t0); lfo.start(t0);
+      return () => { const te = ctx.currentTime;
+        g.gain.cancelScheduledValues(te); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), te);
+        g.gain.exponentialRampToValueAtTime(0.0001, te + 0.2);
+        osc.stop(te + 0.24); sub.stop(te + 0.24); lfo.stop(te + 0.24); };
+    },
+    engineStart() {
+      ensure(); if (!ctx || muted) return () => {};
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator(), sub = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = "sawtooth"; sub.type = "square";
+      osc.frequency.setValueAtTime(70, t0); sub.frequency.setValueAtTime(46, t0);
+      osc.frequency.linearRampToValueAtTime(150, t0 + 0.5);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.08);
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
+      osc.connect(g); sub.connect(g); g.connect(lp).connect(master);
+      osc.start(t0); sub.start(t0);
+      return () => { const te = ctx.currentTime;
+        osc.frequency.linearRampToValueAtTime(80, te + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, te + 0.3);
+        osc.stop(te + 0.34); sub.stop(te + 0.34); };
+    }
+  };
+  window.SFX = SFX;
+})();
+
+  </script>
+  <script>
+/* content.js — all learning + quiz content. Edit text/answers here. */
+const GAME = {
+  meta: {
+    title: "Request Initiation",
+    subtitle: "Create New Request — Interactive Learning POC",
+    sourceUrl: "https://docs.ifs.com/ifsclouddocs/26r1/ProcessModels/Process_Model/Requestinitiation.htm"
+  },
+  stages: [
+    {
+      id: "customer", name: "Identify the Customer", icon: "👤", points: 100,
+      teach: "Every service request starts with the <b>customer (business partner)</b> who reported the need. Selecting the correct customer links the request to the right account, contacts, contracts and pricing.",
+      task: {
+        type: "pick",
+        prompt: "A caller says: “Hi, this is Nora from <b>Riverside Manufacturing</b>, our pump is leaking.” Pick the correct customer record.",
+        options: [
+          { label: "Riverside Manufacturing", correct: true },
+          { label: "Riverside Logistics", correct: false },
+          { label: "Rivertown Facilities", correct: false }
+        ],
+        feedbackRight: "Correct — the request is now attached to Riverside Manufacturing.",
+        feedbackWrong: "Not quite. Match the caller’s company name exactly before continuing."
+      }
+    },
+    {
+      id: "details", name: "Capture Request Details", icon: "📝", points: 150,
+      teach: "Next, capture <b>what</b> the customer needs. A <b>Request Type</b> classifies the work (e.g. Corrective, Preventive, Installation) and the <b>Priority</b> drives urgency and scheduling.",
+      task: {
+        type: "twopick",
+        prompt: "The pump is leaking and stopping production. Choose the best <b>Request Type</b> and <b>Priority</b>.",
+        groups: [
+          { label: "Request Type", options: [
+            { label: "Corrective", correct: true },
+            { label: "Preventive", correct: false },
+            { label: "Installation", correct: false }] },
+          { label: "Priority", options: [
+            { label: "Low", correct: false },
+            { label: "Medium", correct: false },
+            { label: "High", correct: true }] }
+        ],
+        feedbackRight: "Spot on — a breakdown affecting production is Corrective + High priority.",
+        feedbackWrong: "Reconsider: the fault has stopped production, so it is corrective and urgent."
+      }
+    },
+    {
+      id: "object", name: "Link the Service Object", icon: "⚙️", points: 200,
+      teach: "Link the request to the <b>service object</b> — the equipment, functional or <b>serial object</b> being serviced. Linking it pulls in everything attached to that asset: its <b>service history</b>, <b>warranty</b> and <b>specifications</b>. Load each correct item onto the truck to build up the request.",
+      task: {
+        type: "load",
+        prompt: "The fault is a leaking <b>centrifugal pump, serial PMP-2207</b>. Load every item that belongs to this service object onto the flatbed — leave the decoys behind!",
+        target: "Request #RQ-0098",
+        items: [
+          { label: "Pump PMP-2207", icon: "⚙️", correct: true },
+          { label: "Service history", icon: "📚", correct: true },
+          { label: "Warranty record", icon: "🛡️", correct: true },
+          { label: "Conveyor CNV-1140", icon: "🚫", correct: false },
+          { label: "Boiler BLR-3301", icon: "🚫", correct: false }
+        ],
+        feedbackRight: "Fully loaded! The pump plus its history, warranty and specs are now linked to the request.",
+        feedbackWrong: "That item belongs to a different object — only load parts of serial PMP-2207.",
+        feedbackPartial: "Good — keep loading the items that belong to this service object."
+      }
+    },
+    {
+      id: "warranty", name: "Warranty & Commercial Rule", icon: "🛡️", points: 150,
+      teach: "Before releasing, check the <b>warranty</b> and any <b>service commercial rule</b>. These decide whether the work is <b>covered</b> (no charge) or <b>chargeable</b> to the customer, and which price rules apply.",
+      task: {
+        type: "decision",
+        prompt: "Pump PMP-2207 was installed <b>8 months ago</b> with a <b>12-month warranty</b>, and the fault is a manufacturing defect. Is this work covered?",
+        options: [
+          { label: "Covered under warranty", correct: true },
+          { label: "Chargeable to customer", correct: false }
+        ],
+        feedbackRight: "Correct — within the 12-month warranty and a covered defect, so no charge.",
+        feedbackWrong: "Check the dates: 8 months is inside the 12-month warranty for a covered defect."
+      }
+    },
+    {
+      id: "release", name: "Save & Release Request", icon: "🚀", points: 150,
+      teach: "Finally, <b>save</b> the request and <b>release</b> it. Releasing moves it out of preparation and generates the <b>work task</b> that can be scheduled and allocated to a resource.",
+      task: {
+        type: "order",
+        prompt: "Put the final steps in the correct order to complete Request Initiation.",
+        steps: [
+          "Review the captured details",
+          "Save the request",
+          "Release the request",
+          "Work task is generated for scheduling"
+        ],
+        feedbackRight: "Perfect flow — the request is released and a work task is ready to schedule.",
+        feedbackWrong: "Almost — review, save, release, then the task is generated."
+      }
+    }
+  ],
+  quiz: {
+    pointsPerQuestion: 50,
+    questions: [
+      { q: "What is the first thing you identify when creating a new request?",
+        options: ["The technician", "The customer / business partner", "The invoice", "The spare part"], answer: 1 },
+      { q: "Which field classifies the kind of work being requested?",
+        options: ["Priority", "Request Type", "Location", "Serial"], answer: 1 },
+      { q: "A breakdown that halts production should typically be…",
+        options: ["Preventive, Low", "Installation, Medium", "Corrective, High", "Corrective, Low"], answer: 2 },
+      { q: "Linking the service object to a request mainly gives you…",
+        options: ["The customer’s email", "Asset history, warranty and specifications", "The weather forecast", "A discount code"], answer: 1 },
+      { q: "What determines if the work is covered or chargeable?",
+        options: ["The technician’s mood", "Warranty and service commercial rule", "The time of day", "The request number"], answer: 1 },
+      { q: "What does releasing the request produce?",
+        options: ["A new customer", "A work task for scheduling", "A warranty claim only", "Nothing"], answer: 1 }
+    ]
+  }
+};
+
+  </script>
+  <script>
+/* game.js — engine: first-person driving view + isometric load stage + quiz. */
+(() => {
+  "use strict";
+  const state = { score: 0, stageIndex: 0, earnedTrophies: [], quizIndex: 0, phase: "stage" };
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+
+  function initChrome() {
+    $("#t-title").textContent = GAME.meta.title;
+    $("#t-sub").textContent = GAME.meta.subtitle;
+    const mute = $("#muteBtn");
+    mute.addEventListener("click", () => { const m = window.SFX ? SFX.toggleMute() : false; mute.textContent = m ? "🔈" : "🔊"; });
+    ["pointerdown", "keydown"].forEach((ev) => window.addEventListener(ev, () => window.SFX && SFX.unlock(), { once: true }));
+    renderTrophyRail(); $("#score").textContent = "0"; updateProgress();
+  }
+  function addScore(delta, atEl) {
+    state.score += delta; const s = $("#score"); s.textContent = state.score;
+    s.classList.add("bump"); setTimeout(() => s.classList.remove("bump"), 160);
+    if (atEl) floatPoints("+" + delta, atEl);
+  }
+  function floatPoints(txt, refEl) {
+    const r = refEl.getBoundingClientRect(); const f = el("div", "floater", txt);
+    f.style.left = r.left + r.width / 2 + "px"; f.style.top = r.top + "px";
+    f.style.color = "#ffcf4d"; f.style.fontSize = "20px"; document.body.appendChild(f);
+    f.animate([{ transform: "translate(-50%,0)", opacity: 1 }, { transform: "translate(-50%,-46px)", opacity: 0 }],
+      { duration: 900, easing: "ease-out" }).onfinish = () => f.remove();
+  }
+  function updateProgress() {
+    const total = GAME.stages.length + 1; let done = state.stageIndex;
+    if (state.phase === "quiz") done = GAME.stages.length;
+    if (state.phase === "result") done = total;
+    $("#progressFill").style.width = Math.round((done / total) * 100) + "%";
+  }
+  function renderTrophyRail() {
+    const rail = $("#trophyRail"); rail.innerHTML = "";
+    GAME.stages.forEach((s) => { const chip = el("div", "trophy-chip", `${s.icon} ${s.name}`);
+      if (state.earnedTrophies.includes(s.id)) chip.classList.add("earned"); rail.appendChild(chip); });
+    const q = el("div", "trophy-chip", "🏆 Final Quiz");
+    if (state.earnedTrophies.includes("quiz")) q.classList.add("earned"); rail.appendChild(q);
+  }
+  function awardTrophy(id) {
+    if (!state.earnedTrophies.includes(id)) { state.earnedTrophies.push(id); renderTrophyRail(); window.SFX && SFX.trophy(); }
+  }
+
+  /* ---- first-person driving canvas ---- */
+  const road = { canvas: null, ctx: null, W: 960, H: 300, w: 960, h: 300, phase: 0, speed: 0, signDepth: 0.62, driving: false, raf: 0, idling: false, shake: 0, stopIdleSound: null };
+  function initRoad() {
+    road.canvas = $("#road"); road.ctx = road.canvas.getContext("2d");
+    resizeRoad(); window.addEventListener("resize", resizeRoad); idleLoop();
+  }
+  function resizeRoad() {
+    const cssW = road.canvas.parentElement.clientWidth; const ratio = road.H / road.W; const dpr = window.devicePixelRatio || 1;
+    road.w = cssW; road.h = cssW * ratio; road.canvas.style.height = road.h + "px";
+    road.canvas.width = cssW * dpr; road.canvas.height = road.h * dpr; road.ctx.setTransform(dpr, 0, 0, dpr, 0, 0); drawRoad();
+  }
+  function horizonY() { return road.h * 0.42; }
+  function yAt(t) { return horizonY() + (road.h - horizonY()) * (t * t); }
+  function roadHalfAt(t) { const topHalf = road.w * 0.03, botHalf = road.w * 0.62; return topHalf + (botHalf - topHalf) * t; }
+  function drawRoad() {
+    const ctx = road.ctx, W = road.w, H = road.h, cx = W / 2, hy = horizonY();
+    // idle vibration: tiny random jitter to simulate the engine ticking over in neutral
+    ctx.save();
+    if (road.idling && road.shake > 0) {
+      const sx = (Math.random() - 0.5) * road.shake;
+      const sy = (Math.random() - 0.5) * road.shake * 0.8;
+      ctx.translate(sx, sy);
+    }
+    const sky = ctx.createLinearGradient(0, 0, 0, hy); sky.addColorStop(0, "#241a4d"); sky.addColorStop(1, "#3a2a6b");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, hy);
+    const glow = ctx.createRadialGradient(cx, hy, 4, cx, hy, W * 0.4);
+    glow.addColorStop(0, "rgba(255,180,120,.45)"); glow.addColorStop(1, "rgba(255,180,120,0)");
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, hy);
+    const gnd = ctx.createLinearGradient(0, hy, 0, H); gnd.addColorStop(0, "#161233"); gnd.addColorStop(1, "#0b0a1c");
+    ctx.fillStyle = gnd; ctx.fillRect(0, hy, W, H - hy);
+    ctx.beginPath(); ctx.moveTo(cx - roadHalfAt(0), yAt(0)); ctx.lineTo(cx + roadHalfAt(0), yAt(0));
+    ctx.lineTo(cx + roadHalfAt(1), yAt(1)); ctx.lineTo(cx - roadHalfAt(1), yAt(1)); ctx.closePath();
+    const rg = ctx.createLinearGradient(0, hy, 0, H); rg.addColorStop(0, "#33334f"); rg.addColorStop(1, "#26263c");
+    ctx.fillStyle = rg; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#a855f7";
+    ctx.beginPath(); ctx.moveTo(cx - roadHalfAt(0), yAt(0)); ctx.lineTo(cx - roadHalfAt(1), yAt(1)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + roadHalfAt(0), yAt(0)); ctx.lineTo(cx + roadHalfAt(1), yAt(1)); ctx.stroke();
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      let t = ((i / count) + road.phase) % 1; if (t <= 0.02) continue;
+      const t2 = Math.min(1, t + 0.035); const y1 = yAt(t), y2 = yAt(t2);
+      const w1 = Math.max(1, roadHalfAt(t) * 0.045), w2 = Math.max(1, roadHalfAt(t2) * 0.045);
+      ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.beginPath();
+      ctx.moveTo(cx - w1, y1); ctx.lineTo(cx + w1, y1); ctx.lineTo(cx + w2, y2); ctx.lineTo(cx - w2, y2); ctx.closePath(); ctx.fill();
+    }
+    for (let i = 0; i < 8; i++) {
+      let t = ((i / 8) + road.phase) % 1; if (t < 0.05) continue;
+      drawPylon(ctx, cx - roadHalfAt(t) - roadHalfAt(t) * 0.10, t);
+      drawPylon(ctx, cx + roadHalfAt(t) + roadHalfAt(t) * 0.10, t);
+    }
+    drawSignpost(ctx, cx); drawCockpit(ctx, W, H);
+    ctx.restore();
+  }
+  function drawPylon(ctx, x, t) {
+    const y = yAt(t), hgt = 46 * t + 3, wdt = Math.max(1.5, 6 * t);
+    ctx.fillStyle = "#4b3d7a"; ctx.fillRect(x - wdt / 2, y - hgt, wdt, hgt);
+    ctx.fillStyle = "#ffcf4d"; ctx.fillRect(x - wdt / 2, y - hgt, wdt, Math.max(1.5, 4 * t));
+  }
+  function drawSignpost(ctx, cx) {
+    const stage = GAME.stages[Math.min(state.stageIndex, GAME.stages.length - 1)];
+    const t = road.signDepth; const baseY = yAt(t); const scale = 0.35 + t * 1.05;
+    const bw = 150 * scale, bh = 60 * scale; const half = bw / 2;
+    // place the board just past the right road edge, but CLAMP so it stays fully on-canvas
+    let boardCX = cx + roadHalfAt(t) + 34 * scale;
+    boardCX = Math.min(boardCX, road.w - half - 8);
+    boardCX = Math.max(boardCX, half + 8);
+    const bx = boardCX - half, by = baseY - 70 * scale - bh;
+    // post sits under the board centre, down to the ground
+    ctx.fillStyle = "#5b4a86"; ctx.fillRect(boardCX - 3 * scale, by + bh, 6 * scale, baseY - (by + bh));
+    roundRect(ctx, bx, by, bw, bh, 10 * scale);
+    const bg = ctx.createLinearGradient(bx, by, bx, by + bh); bg.addColorStop(0, "#7c3aed"); bg.addColorStop(1, "#5b21b6");
+    ctx.fillStyle = bg; ctx.fill(); ctx.lineWidth = 2 * scale; ctx.strokeStyle = "#ffcf4d"; ctx.stroke();
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
+    ctx.font = `800 ${16 * scale}px Segoe UI, sans-serif`;
+    ctx.fillText(stage.icon + "  STOP " + (state.stageIndex + 1), bx + bw / 2, by + bh * 0.34);
+    ctx.font = `700 ${12 * scale}px Segoe UI, sans-serif`;
+    wrapText(ctx, stage.name, bx + bw / 2, by + bh * 0.66, bw - 12 * scale, 13 * scale);
+  }
+  function drawCockpit(ctx, W, H) {
+    ctx.fillStyle = "#0b0a16"; ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, H * 0.86);
+    ctx.quadraticCurveTo(W * 0.5, H * 0.70, W, H * 0.86); ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(168,85,247,.5)"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(0, H * 0.86); ctx.quadraticCurveTo(W * 0.5, H * 0.70, W, H * 0.86); ctx.stroke();
+    const wx = W * 0.5, wy = H * 1.02, wr = W * 0.16;
+    ctx.strokeStyle = "#1a1730"; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(wx, wy, wr, Math.PI, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#2b2b4d"; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(wx, wy, wr, Math.PI, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#1a1730"; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(wx - wr, wy); ctx.lineTo(wx + wr, wy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx, wy - wr); ctx.stroke();
+    ctx.fillStyle = "#7c3aed"; ctx.beginPath(); ctx.arc(wx, wy, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "800 10px Segoe UI"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("IFS", wx, wy);
+  }
+  function wrapText(ctx, text, cx, y, maxW, lh) {
+    const words = text.split(" "); let line = "", lines = [];
+    words.forEach((w) => { const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test; });
+    if (line) lines.push(line);
+    const startY = y - ((lines.length - 1) * lh) / 2; lines.forEach((ln, i) => ctx.fillText(ln, cx, startY + i * lh));
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  // Continuous redraw loop. When NOT driving the road stays still (no drift);
+  // it only redraws so the idle vibration (if active) is visible.
+  function idleLoop() { if (!road.driving) drawRoad(); requestAnimationFrame(idleLoop); }
+
+  // Engine idles in neutral for ~2s: gentle vibration + idle rumble, then fully still.
+  function startIdle(ms = 2000) {
+    if (road.stopIdleSound) { road.stopIdleSound(); road.stopIdleSound = null; }
+    road.idling = true; road.shake = 1.6;
+    road.stopIdleSound = window.SFX ? SFX.engineIdle() : null;
+    clearTimeout(road._idleTimer);
+    road._idleTimer = setTimeout(() => {
+      road.idling = false; road.shake = 0;
+      if (road.stopIdleSound) { road.stopIdleSound(); road.stopIdleSound = null; }
+      $("#speedBadge").textContent = "PARKED · 0 km/h";
+      drawRoad();
+    }, ms);
+    $("#speedBadge").textContent = "IDLING · neutral";
+  }
+  function driveForward(done) {
+    if (road.driving) return done && done(); road.driving = true;
+    const stopEngine = window.SFX ? SFX.engineStart() : null; const t0 = performance.now(); const dur = 1600;
+    $("#speedBadge").textContent = "DRIVING · ↑";
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / dur); road.speed = Math.sin(p * Math.PI);
+      road.phase = (road.phase + 0.010 + road.speed * 0.055) % 1; road.signDepth = 0.62 + road.speed * 0.36;
+      $("#speedBadge").textContent = `DRIVING · ${Math.round(road.speed * 90)} km/h`; drawRoad();
+      if (p < 1) road.raf = requestAnimationFrame(step);
+      else { road.driving = false; road.speed = 0; road.signDepth = 0.62;
+        stopEngine && stopEngine(); drawRoad(); startIdle(2000); done && done(); }
+    };
+    road.raf = requestAnimationFrame(step);
+  }
+
+  /* ---- stages ---- */
+  function renderStage() {
+    state.phase = "stage"; updateProgress();
+    const stage = GAME.stages[state.stageIndex]; const panel = $("#panel"); panel.innerHTML = "";
+    panel.appendChild(el("div", "stage-tag", `STOP ${state.stageIndex + 1} / ${GAME.stages.length}`));
+    panel.appendChild(el("h2", null, `${stage.icon} ${stage.name}`));
+    panel.appendChild(el("div", "teach", stage.teach));
+    panel.appendChild(el("div", "prompt", stage.task.prompt));
+    const holder = el("div", "task-holder"); panel.appendChild(holder);
+    const fb = el("div", "feedback"); const actions = el("div", "actions"); panel.appendChild(fb); panel.appendChild(actions);
+    const nextBtn = el("button", "btn", "Drive to next stop ▶"); nextBtn.disabled = true;
+    nextBtn.onclick = () => { window.SFX && SFX.click(); advanceStage(); };
+    const onSolved = (ok, refEl) => {
+      if (ok) { fb.className = "feedback ok"; fb.textContent = "✔ " + stage.task.feedbackRight + `  (+${stage.points} pts)`;
+        window.SFX && SFX.correct(); addScore(stage.points, refEl || nextBtn); awardTrophy(stage.id); nextBtn.disabled = false;
+      } else { fb.className = "feedback no"; fb.textContent = "✗ " + stage.task.feedbackWrong; window.SFX && SFX.wrong(); }
+    };
+    buildTask(stage.task, holder, onSolved, fb); actions.appendChild(nextBtn);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function advanceStage() {
+    driveForward(() => { state.stageIndex++; if (state.stageIndex >= GAME.stages.length) startQuiz(); else renderStage(); });
+  }
+  function buildTask(task, holder, onSolved, fb) {
+    switch (task.type) {
+      case "pick": case "decision": return buildPick(task, holder, onSolved);
+      case "twopick": return buildTwoPick(task, holder, onSolved);
+      case "load": return buildLoad(task, holder, onSolved, fb);
+      case "order": return buildOrder(task, holder, onSolved);
+      default: holder.textContent = "Unknown task type: " + task.type;
+    }
+  }
+  function buildPick(task, holder, onSolved) {
+    const wrap = el("div", "options"); let solved = false;
+    task.options.forEach((o) => {
+      const b = el("div", "opt", o.label);
+      b.onclick = () => { if (solved) return; window.SFX && SFX.click();
+        if (o.correct) { b.classList.add("correct"); solved = true; disable(wrap); onSolved(true, b); }
+        else { b.classList.add("wrong"); onSolved(false); } };
+      wrap.appendChild(b);
+    });
+    holder.appendChild(wrap);
+  }
+  function buildTwoPick(task, holder, onSolved) {
+    const picked = {}; let solved = false;
+    task.groups.forEach((grp, gi) => {
+      holder.appendChild(el("div", "group-label", grp.label.toUpperCase()));
+      const wrap = el("div", "options");
+      grp.options.forEach((o) => {
+        const b = el("div", "opt", o.label);
+        b.onclick = () => { if (solved) return; window.SFX && SFX.click();
+          [...wrap.children].forEach((c) => c.classList.remove("correct", "wrong"));
+          picked[gi] = o.correct; b.classList.add(o.correct ? "correct" : "wrong");
+          if (Object.keys(picked).length === task.groups.length) {
+            const allRight = Object.values(picked).every(Boolean); onSolved(allRight, b); if (allRight) solved = true; } };
+        wrap.appendChild(b);
+      });
+      holder.appendChild(wrap);
+    });
+  }
+  function buildOrder(task, holder, onSolved) {
+    const correct = task.steps.slice(); const list = el("ul", "order-list"); let dragEl = null, solved = false;
+    shuffle(correct.slice()).forEach((txt) => {
+      const li = el("li", "order-item", `<span class="handle">☰</span> ${txt}`); li.draggable = true; li.dataset.text = txt;
+      li.addEventListener("dragstart", () => { dragEl = li; li.classList.add("dragging"); });
+      li.addEventListener("dragend", () => { li.classList.remove("dragging"); }); list.appendChild(li);
+    });
+    list.addEventListener("dragover", (e) => { e.preventDefault(); if (!dragEl) return;
+      const after = getAfter(list, e.clientY); if (after == null) list.appendChild(dragEl); else list.insertBefore(dragEl, after); });
+    function getAfter(container, y) {
+      const items = [...container.querySelectorAll(".order-item:not(.dragging)")];
+      return items.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) return { offset, element: child }; return closest; }, { offset: -Infinity }).element;
+    }
+    const checkBtn = el("button", "btn ghost", "Check order");
+    checkBtn.onclick = () => { if (solved) return; window.SFX && SFX.click();
+      const now = [...list.children].map((li) => li.dataset.text); const ok = now.every((t, i) => t === correct[i]);
+      if (ok) { solved = true; checkBtn.disabled = true; onSolved(true, checkBtn); } else onSolved(false); };
+    holder.appendChild(list); holder.appendChild(el("div", "prompt", "Drag rows to reorder, then press Check.")); holder.appendChild(checkBtn);
+  }
+
+  /* ---- isometric load stage ---- */
+  function buildLoad(task, holder, onSolved, fb) {
+    const needed = task.items.filter((i) => i.correct).length; let loadedCount = 0, solved = false; const loadedBoxes = [];
+    const area = el("div", "load-area"); const pool = el("div", "load-pool"); const right = el("div", "load-stage-right");
+    task.items.forEach((it) => {
+      const chip = el("div", "chip", `<span>${it.icon}</span><span>${it.label}</span>`); chip.draggable = true; chip.dataset.correct = it.correct;
+      chip.addEventListener("dragstart", (e) => { chip.classList.add("dragging"); e.dataTransfer.setData("correct", String(it.correct)); e.dataTransfer.setData("label", it.label); });
+      chip.addEventListener("dragend", () => chip.classList.remove("dragging"));
+      chip.addEventListener("click", () => tryLoad(it.correct, chip)); chip._it = it; pool.appendChild(chip);
+    });
+    const canvas = el("canvas"); canvas.id = "truckCanvas"; canvas.width = 520; canvas.height = 300; const ctx = canvas.getContext("2d");
+    const meter = el("div", "fill-meter"); const track = el("div", "fill-track"); const bar = el("div", "fill-bar"); track.appendChild(bar);
+    const lbl = el("div", "fill-label", `Cargo: 0 / ${needed} loaded`); meter.appendChild(track); meter.appendChild(lbl);
+    right.appendChild(canvas); right.appendChild(meter); area.appendChild(pool); area.appendChild(right);
+    holder.appendChild(el("div", "prompt", "Drag correct items onto the truck (or tap them on mobile). Decoys bounce off!")); holder.appendChild(area);
+    canvas.addEventListener("dragover", (e) => { e.preventDefault(); canvas.style.filter = "brightness(1.15)"; });
+    canvas.addEventListener("dragleave", () => (canvas.style.filter = "none"));
+    canvas.addEventListener("drop", (e) => { e.preventDefault(); canvas.style.filter = "none";
+      const correct = e.dataTransfer.getData("correct") === "true"; const label = e.dataTransfer.getData("label");
+      const chip = [...pool.children].find((c) => c._it && c._it.label === label); tryLoad(correct, chip); });
+    function tryLoad(correct, chip) {
+      if (solved) return;
+      if (correct) { if (chip.classList.contains("loaded")) return; chip.classList.add("loaded"); window.SFX && SFX.load();
+        const colors = ["#a855f7", "#7c3aed", "#34d399", "#ffcf4d"]; loadedBoxes.push({ t: 0, color: colors[loadedCount % colors.length] }); loadedCount++;
+        bar.style.width = Math.round((loadedCount / needed) * 100) + "%"; lbl.textContent = `Cargo: ${loadedCount} / ${needed} loaded`;
+        if (loadedCount >= needed) { solved = true; onSolved(true, canvas); }
+        else if (fb) { fb.className = "feedback ok"; fb.textContent = "✔ " + (task.feedbackPartial || "Loaded!"); }
+      } else { if (chip) { chip.classList.add("reject"); setTimeout(() => chip.classList.remove("reject"), 400); } onSolved(false); }
+    }
+    function iso(x, y, z) { const ox = canvas.width * 0.5, oy = canvas.height * 0.62; return { x: ox + (x - y) * 0.9, y: oy + (x + y) * 0.5 - z }; }
+    function poly(pts) { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.fill(); }
+    function shade(hex, amt) { const n = parseInt(hex.slice(1), 16);
+      let r = (n >> 16) + amt, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
+      r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b)); return `rgb(${r},${g},${b})`; }
+    function box(cx, cy, w, d, h, color) {
+      const a = iso(cx - w, cy - d, h), b = iso(cx + w, cy - d, h), c = iso(cx + w, cy + d, h), e = iso(cx - w, cy + d, h);
+      ctx.fillStyle = color; poly([a, b, c, e]);
+      const a0 = iso(cx - w, cy + d, 0); ctx.fillStyle = shade(color, -30); poly([e, c, iso(cx + w, cy + d, 0), a0]);
+      const e0 = iso(cx - w, cy - d, 0); ctx.fillStyle = shade(color, -55); poly([a, e, a0, e0]);
+    }
+    function boxAt(cx, cy, w, d, h, color, zbase) {
+      const a = iso(cx - w, cy - d, zbase + h), b = iso(cx + w, cy - d, zbase + h), c = iso(cx + w, cy + d, zbase + h), e = iso(cx - w, cy + d, zbase + h);
+      ctx.fillStyle = color; poly([a, b, c, e]);
+      const a0 = iso(cx - w, cy + d, zbase); ctx.fillStyle = shade(color, -30); poly([e, c, iso(cx + w, cy + d, zbase), a0]);
+      const e0 = iso(cx - w, cy - d, zbase); ctx.fillStyle = shade(color, -55); poly([a, e, a0, e0]);
+    }
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function drawTruck() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(0,0,0,.35)"; const g = iso(0, 0, 0);
+      ctx.beginPath(); ctx.ellipse(g.x, g.y + 40, 150, 40, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#0c0c18"; [[-60, 40], [60, 40], [-60, -40], [60, -40]].forEach(([wx, wy]) => {
+        const p = iso(wx, wy, 6); ctx.beginPath(); ctx.ellipse(p.x, p.y + 26, 16, 10, 0, 0, Math.PI * 2); ctx.fill(); });
+      box(0, 0, 70, 46, 18, "#3a2f63"); box(58, 0, 16, 40, 60, "#7c3aed");
+      const wp = iso(58, -40, 62); ctx.fillStyle = "#bff5f0"; ctx.beginPath();
+      ctx.moveTo(wp.x, wp.y); ctx.lineTo(wp.x + 14, wp.y + 8); ctx.lineTo(wp.x + 14, wp.y + 26); ctx.lineTo(wp.x, wp.y + 18); ctx.closePath(); ctx.fill();
+      loadedBoxes.forEach((bx, i) => { bx.t = Math.min(1, bx.t + 0.08); const col = i % 2, rowp = Math.floor(i / 2);
+        const px = -30 + col * 40, py = -20 + rowp * 40; const grow = easeOut(bx.t); const h = 34 * grow; const drop = (1 - grow) * 60;
+        boxAt(px, py, 18, 16, h, bx.color, 20 + drop); });
+      const lp = iso(0, 40, 20); ctx.fillStyle = "rgba(255,255,255,.9)"; roundRect(ctx, lp.x - 42, lp.y - 6, 84, 18, 5); ctx.fill();
+      ctx.fillStyle = "#3a2f63"; ctx.font = "800 11px Segoe UI"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(task.target, lp.x, lp.y + 3);
+      requestAnimationFrame(drawTruck);
+    }
+    drawTruck();
+  }
+
+  /* ---- quiz ---- */
+  function startQuiz() { state.phase = "quiz"; state.quizIndex = 0; updateProgress(); renderQuizQuestion(); }
+  function renderQuizQuestion() {
+    const quiz = GAME.quiz; const q = quiz.questions[state.quizIndex]; const panel = $("#panel"); panel.innerHTML = "";
+    panel.appendChild(el("div", "stage-tag", "🏆 FINAL KNOWLEDGE CHECK"));
+    panel.appendChild(el("div", "quiz-progress", `Question ${state.quizIndex + 1} of ${quiz.questions.length}`));
+    panel.appendChild(el("div", "quiz-q", q.q));
+    const wrap = el("div", "options"); const fb = el("div", "feedback"); const actions = el("div", "actions");
+    const nextBtn = el("button", "btn", state.quizIndex === quiz.questions.length - 1 ? "See results ▶" : "Next ▶"); nextBtn.disabled = true; let answered = false;
+    q.options.forEach((opt, i) => {
+      const b = el("div", "opt", opt);
+      b.onclick = () => { if (answered) return; answered = true; disable(wrap);
+        if (i === q.answer) { b.classList.add("correct"); window.SFX && SFX.correct(); addScore(quiz.pointsPerQuestion, b);
+          fb.className = "feedback ok"; fb.textContent = `✔ Correct! (+${quiz.pointsPerQuestion} pts)`; }
+        else { b.classList.add("wrong"); wrap.children[q.answer].classList.add("correct"); window.SFX && SFX.wrong();
+          fb.className = "feedback no"; fb.textContent = "✗ The highlighted answer is correct."; }
+        nextBtn.disabled = false; };
+      wrap.appendChild(b);
+    });
+    nextBtn.onclick = () => { window.SFX && SFX.click(); state.quizIndex++;
+      if (state.quizIndex >= quiz.questions.length) showResult(); else renderQuizQuestion(); };
+    panel.appendChild(wrap); panel.appendChild(fb); actions.appendChild(nextBtn); panel.appendChild(actions);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function showResult() {
+    state.phase = "result"; awardTrophy("quiz"); updateProgress();
+    const maxStage = GAME.stages.reduce((a, s) => a + s.points, 0); const maxQuiz = GAME.quiz.questions.length * GAME.quiz.pointsPerQuestion;
+    const max = maxStage + maxQuiz; const pct = Math.round((state.score / max) * 100); const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : 1;
+    const panel = $("#panel"); panel.innerHTML = ""; const r = el("div", "result");
+    r.appendChild(el("div", "big-trophy", "🏆")); r.appendChild(el("h1", null, "Module Complete!"));
+    r.appendChild(el("div", "stars", "★".repeat(stars) + "☆".repeat(3 - stars)));
+    r.appendChild(el("div", "final-score", `${state.score} / ${max} points · ${pct}%`)); r.appendChild(el("p", null, badge(pct)));
+    const again = el("button", "btn", "↻ Play again"); again.onclick = () => { window.SFX && SFX.click(); resetGame(); };
+    const actions = el("div", "actions"); actions.style.justifyContent = "center"; actions.appendChild(again); r.appendChild(actions);
+    panel.appendChild(r); panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    window.SFX && SFX.complete(); confettiBurst();
+  }
+  function badge(pct) {
+    if (pct >= 90) return "Outstanding — you’ve mastered Request Initiation basics!";
+    if (pct >= 60) return "Nice work — solid understanding of Create New Request.";
+    return "Good start — replay to boost your score and retention.";
+  }
+  function resetGame() {
+    state.score = 0; state.stageIndex = 0; state.quizIndex = 0; state.earnedTrophies = []; state.phase = "stage";
+    $("#score").textContent = "0"; renderTrophyRail(); renderStage();
+  }
+  function disable(container) { [...container.children].forEach((c) => (c.style.pointerEvents = "none")); }
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function confettiBurst() {
+    const colors = ["#7c3aed", "#a855f7", "#ffcf4d", "#34d399", "#ff5a7a"];
+    for (let i = 0; i < 110; i++) { const c = document.createElement("div"); c.className = "confetti";
+      c.style.left = Math.random() * 100 + "vw"; c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.transform = `rotate(${Math.random() * 360}deg)`; document.body.appendChild(c);
+      c.animate([{ transform: "translateY(0) rotate(0)", opacity: 1 }, { transform: `translateY(108vh) rotate(${720 + Math.random() * 360}deg)`, opacity: .9 }],
+        { duration: 2200 + Math.random() * 1600, easing: "cubic-bezier(.2,.6,.4,1)" }).onfinish = () => c.remove(); }
+  }
+  window.addEventListener("DOMContentLoaded", () => { initChrome(); initRoad(); renderStage(); startIdle(2000); });
+})();
+
+  </script>
+</body>
+</html>
